@@ -1,0 +1,10 @@
+index=wineventlog EventCode=4625 Logon_Type=10 Authentication_Package=NTLM
+| stats count as failed by Src_IP, Target_Account_Name
+| where failed > 10
+
+index=wineventlog (EventCode=4625 OR EventCode=4624) Logon_Type=10
+| transaction Src_IP, Target_Account_Name maxspan=2m
+| where failed>=10 AND success>=1
+
+| tstats count where index=wineventlog EventCode=4625 Logon_Type=10 by _time span=1m, Src_IP
+| where count >=10
