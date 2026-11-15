@@ -1,39 +1,21 @@
-# Home SOC Lab on AWS - Active Directory (NTLM Bruteforce -> RDP Compromise)
+#home SOC Lab active Directory (NTML BRUTEFORCE Attack -> RDP COMPROMISE 
+## Real Lab Evidence - MYDFIR.local (10/26/2026)
 
-**SOC Analyst L1 Project | Splunk SIEM | AWS EC2 | Active Directory | MITRE ATT&CK**
-> Simulated NTLM bruteforce against AD account via RDP, detected with Splunk Enterprise on Ubuntu 22.04
+**Domain:** MYDFIR.local
+**AD User:** Mpho Johannes MJ Tema - MTema@MYDFIR.local
+**Region:** eu-north-1 (Stockholm)
+**Splunk:** 16.170.40.157:8000 / 16.170.40.157:8000 - Splunk 10.6.1
 
-Author: **Mpho Johannes Tema** | mphotema97@gmail.com | Security+ SY0-701
+**EC2 Instances:**
+- ADDC-01: EC2AMAZ-6HLNKC8 - Public 13.49.41.220, Private 172.31.11.8, m7i.large, SG launch-wizard-2 (3389 TCP)
+- WIN-10-TARGET: EC2AMAZ-LNLLFTL - Public 13.53.159.18, Private 172.31.3.111, m7i.large
 
-## Architecture
-- AWS EC2 - af-south-1
-    - Windows Server 2019 - AD Domain Controller (ad.lab.local)
-    - Windows 10 Pro - Domain Joined, RDP Enabled 3389, Sysmon + UF
-    - Ubuntu 22.04 LTS - Splunk Enterprise Free + Windows TA
-    - Kali Linux - Attacker
-- Security Groups: RDP 3389, Splunk 8000/8089, SSH 22
-- Pipeline: Security Logs -> UF -> index=wineventlog
+**Splunk Detection:**
+- Index mydfir-ad: 2,643 events ingested
+- Index mydfir-sysmon: 154 x EventCode 4625 (Failed), 9 x EventCode 4624 (Success)
+- Target: EC2AMAZ-LNLLFTL.MYDFIR.local - Logon Type 5, Elevated Token Yes
+- MITRE: T1110.001 (Brute Force), T1021.001 (RDP), T1003.002 (NTLM)
 
-## Attack Path (AD Focus)
-- Hydra: hydra -l administrator -P rockyou.txt rdp://<EC2_WIN_IP>
-- MITRE: T1110.001 Brute Force, T1021.001 RDP, T1003.002 NTLM Hash
+**Attack Path:** Hydra RDP bruteforce to 13.53.159.18:3389 targeting MYDFIR.local user MTema
 
-## Detection (SOC L1)
-Logs: 4625 Failed Type10, 4624 Success Type10, 4778 Session, 4672 Privileges, 4768/4776 NTLM Auth
-
-SPL:
-index=wineventlog EventCode=4625 Logon_Type=10 Authentication_Package=NTLM
-| stats count by Src_IP, Target_Account_Name
-| where count > 10
-
-Correlation: 4625 burst (47 failed 0xC000006A) -> 4624 success -> 4778 session -> 4672 admin
-
-## Incident Response
-Contain: SG block IP, disable AD account
-Eradicate: Reset AD pwd, enforce NLA, LSA Protection
-Recover: Account lockout policy, MFA
-
-## Tools
-AWS EC2, AD DS, Ubuntu 22.04, Splunk SPL, Sysmon, MITRE Navigator, Wireshark, Hydra
-
-Screenshots: See /screenshots folder
+Screenshots: /screenshots/01-07
